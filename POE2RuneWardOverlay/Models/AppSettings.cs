@@ -14,6 +14,12 @@ public class AppSettings
     public double OverlayOpacity { get; set; } = 0.7;
     public double OverlayLeft { get; set; } = -1;
     public double OverlayTop { get; set; } = -1;
+    public double OverlayScale { get; set; } = 1.0;
+    public string OverlayLabelText { get; set; } = "룬수호";
+    public bool ShowLabel { get; set; } = true;
+    public string NormalBarColor { get; set; } = "#4696DC";
+    public string DangerBarColor { get; set; } = "#DC3737";
+    public string OverflowBarColor { get; set; } = "#FFCC44";
 
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 

@@ -7,6 +7,15 @@
 
     <StackPanel Margin="20">
 
+        <Border x:Name="FirstRunBanner" Visibility="Collapsed"
+                Background="#FFF3CD" BorderBrush="#FFC107" BorderThickness="1"
+                CornerRadius="4" Padding="10,8" Margin="0,0,0,16">
+            <TextBlock TextWrapping="Wrap" FontSize="12">
+                <Run FontWeight="SemiBold">처음 실행입니다.</Run>
+                <Run> 게임을 실행한 후 아래 캡처 영역 조정 창에서 룬수호 수치 위치를 맞춰주세요.</Run>
+            </TextBlock>
+        </Border>
+
         <TextBlock Text="위험 임계값" FontWeight="SemiBold" Margin="0,0,0,4"/>
         <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
             <Slider x:Name="ThresholdSlider" Minimum="5" Maximum="60" Width="240"
@@ -21,6 +30,53 @@
             <TextBlock Text="0 입력 시 OCR 자동 감지" FontSize="11" Foreground="#888" VerticalAlignment="Center"/>
         </StackPanel>
         <TextBlock Text="현재값이 최대치×1.5 초과이면 OCR 오인식으로 간주해 무시"
+                   FontSize="11" Foreground="#888" Margin="0,0,0,16"/>
+
+        <TextBlock Text="오버레이 크기" FontWeight="SemiBold" Margin="0,0,0,4"/>
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+            <Slider x:Name="ScaleSlider" Minimum="0.1" Maximum="1.0" Width="220"
+                    TickFrequency="0.1" IsSnapToTickEnabled="True"
+                    ValueChanged="OnScaleChanged" VerticalAlignment="Center"/>
+            <TextBlock x:Name="ScaleLabel" Margin="8,0,0,0" VerticalAlignment="Center" Width="45"/>
+        </StackPanel>
+
+        <TextBlock Text="레이블 텍스트" FontWeight="SemiBold" Margin="0,0,0,4"/>
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+            <TextBox x:Name="LabelTextInput" Width="160" Margin="0,0,12,0" VerticalAlignment="Center"/>
+            <CheckBox x:Name="HideLabelCheck" Content="텍스트 표시하지 않기"
+                      VerticalAlignment="Center"
+                      Checked="OnHideLabelChanged" Unchecked="OnHideLabelChanged"/>
+        </StackPanel>
+
+        <TextBlock Text="색상" FontWeight="SemiBold" Margin="0,0,0,6"/>
+        <Grid Margin="0,0,0,4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="75"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="28"/>
+                <RowDefinition Height="28"/>
+                <RowDefinition Height="28"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="정상 바" VerticalAlignment="Center" Grid.Row="0" Grid.Column="0"/>
+            <Border x:Name="NormalPreview" Width="14" Height="14" Grid.Row="0" Grid.Column="1"
+                    VerticalAlignment="Center" BorderBrush="#888" BorderThickness="1" CornerRadius="2"/>
+            <TextBox x:Name="NormalColor" Grid.Row="0" Grid.Column="2" Margin="4,2,0,2"
+                     TextChanged="OnNormalColorChanged"/>
+            <TextBlock Text="위험 바" VerticalAlignment="Center" Grid.Row="1" Grid.Column="0"/>
+            <Border x:Name="DangerPreview" Width="14" Height="14" Grid.Row="1" Grid.Column="1"
+                    VerticalAlignment="Center" BorderBrush="#888" BorderThickness="1" CornerRadius="2"/>
+            <TextBox x:Name="DangerColor" Grid.Row="1" Grid.Column="2" Margin="4,2,0,2"
+                     TextChanged="OnDangerColorChanged"/>
+            <TextBlock Text="오버플로우 바" VerticalAlignment="Center" Grid.Row="2" Grid.Column="0"/>
+            <Border x:Name="OverflowPreview" Width="14" Height="14" Grid.Row="2" Grid.Column="1"
+                    VerticalAlignment="Center" BorderBrush="#888" BorderThickness="1" CornerRadius="2"/>
+            <TextBox x:Name="OverflowColor" Grid.Row="2" Grid.Column="2" Margin="4,2,0,2"
+                     TextChanged="OnOverflowColorChanged"/>
+        </Grid>
+        <TextBlock Text="#RRGGBB 형식으로 입력 (예: #4696DC)"
                    FontSize="11" Foreground="#888" Margin="0,0,0,16"/>
 
         <TextBlock Text="캡처 영역 (좌측 하단 룬수호 텍스트)" FontWeight="SemiBold" Margin="0,0,0,4"/>
@@ -40,12 +96,15 @@
             <TextBlock Text="H" Grid.Column="9" VerticalAlignment="Center"/>
             <TextBox x:Name="CaptureH" Grid.Column="10" Margin="2"/>
         </Grid>
-        <TextBlock Text="기본값: X=20, Y=832, W=220, H=35"
+        <TextBlock Text="기본값: X=20, Y=832, W=220, H=35 (전체창 모드, 1920×1080 기준)"
                    FontSize="11" Foreground="#888" Margin="0,0,0,4"/>
         <TextBlock Text="이동: Ctrl+Shift+M (황금 테두리 = 이동 모드)"
                    FontSize="11" Foreground="#888" Margin="0,0,0,8"/>
-        <Button Content="캡처 영역 미리보기 (3초)" HorizontalAlignment="Left"
-                Margin="0,0,0,16" Click="OnPreview"/>
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+            <Button Content="드래그로 위치 조정" Margin="0,0,8,0" Click="OnAdjustArea"/>
+            <Button Content="미리보기 (3초)" Click="OnPreview"/>
+        </StackPanel>
+        <TextBlock x:Name="DpiLabel" FontSize="11" Margin="0,0,0,16"/>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="저장" Width="80" Margin="0,0,8,0" Click="OnSave"/>

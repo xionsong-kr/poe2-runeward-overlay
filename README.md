@@ -7,14 +7,18 @@ Path of Exile 2의 **룬수호(Rune Ward)** 수치를 화면에 실시간으로 
 
 ## 기능
 
-- **실시간 수치 표시** — BitBlt 캡처 + Tesseract OCR로 300ms마다 읽어 표시
-- **상태별 색상**
+- **실시간 수치 표시** — BitBlt 캡처 + Tesseract OCR로 150ms마다 읽어 표시
+- **상태별 색상** (색상 커스터마이징 가능)
   - 파란 바 — 정상
   - 금색 바 — 칼구르의 잔류물 오버플로우 (최대치 × 최대 1.5배)
   - 빨간 바 + 점멸 — 위험 (설정한 임계값 이하)
+- **오버레이 크기 배율** — 0.5× ~ 2.0× 슬라이더로 조절
+- **드래그로 캡처 영역 조정** — 주황 테두리를 직접 드래그해 위치/크기 설정
+- **DPI 스케일링 자동 처리** — 125%, 150% 등 고DPI 환경에서도 정확히 동작
 - **클릭 통과** — 오버레이가 게임 조작을 방해하지 않음
 - **이동 모드** — `Ctrl+Shift+M`으로 토글, 드래그로 위치 변경 (황금 테두리 표시)
 - **시스템 트레이** — 트레이 아이콘 우클릭으로 설정/종료
+- **중복 실행 방지** — 이미 실행 중이면 알림 후 종료
 - **OCR 필터링** — 자릿수 검사, 급변 확인, 설정 최대치 기반 상한 필터로 오인식 억제
 
 ---
@@ -23,13 +27,20 @@ Path of Exile 2의 **룬수호(Rune Ward)** 수치를 화면에 실시간으로 
 
 - Windows 10/11
 - [.NET 8 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
-- Tesseract 언어 데이터: `eng.traineddata`
 
 ---
 
-## 설치 및 실행
+## 설치
 
-### 1. 빌드
+### 릴리즈에서 다운로드 (권장)
+
+1. [Releases](https://github.com/xionsong-kr/poe2-runeward-overlay/releases) 페이지에서 최신 zip 다운로드
+2. 원하는 폴더에 압축 해제
+3. `POE2RuneWardOverlay.exe` 실행
+
+> tessdata(영어 OCR 데이터)가 zip에 포함되어 있습니다.
+
+### 소스에서 빌드
 
 ```bash
 git clone https://github.com/xionsong-kr/poe2-runeward-overlay.git
@@ -37,43 +48,46 @@ cd poe2-runeward-overlay
 dotnet build
 ```
 
-### 2. tessdata 준비
-
-Tesseract 영어 언어 데이터를 다운로드해 아래 경로에 배치합니다.
+빌드 후 tessdata를 아래 경로에 직접 배치해야 합니다.
 
 ```
 POE2RuneWardOverlay/tessdata/eng.traineddata
 ```
 
-다운로드 링크:  
-https://github.com/tesseract-ocr/tessdata/raw/main/eng.traineddata
-
-### 3. 실행
-
-```
-POE2RuneWardOverlay/bin/Debug/net8.0-windows/POE2RuneWardOverlay.exe
-```
+다운로드: https://github.com/tesseract-ocr/tessdata/raw/main/eng.traineddata
 
 ---
 
-## 설정
+## 실행 후 설정 가이드
 
-실행 시 설정창이 자동으로 열립니다. 트레이 아이콘 우클릭 → 설정으로도 열 수 있습니다.
+### 1. 처음 실행
+1. `POE2RuneWardOverlay.exe` 실행
+2. **Path of Exile 2를 먼저 실행**하고 캐릭터에 진입
+3. 설정창과 함께 **주황색 테두리 조정 창**이 자동으로 열림
+
+### 2. 캡처 영역 맞추기
+1. 주황 테두리를 드래그해 **화면 좌하단 룬수호 수치 위**로 이동
+2. 우하단 핸들을 드래그해 수치가 딱 맞게 크기 조절
+3. **완료** 클릭 → 설정창 **저장** 클릭
+
+> 1920×1080 전체창 모드 기준 기본값: X=20, Y=832, W=220, H=35
+
+### 3. 오버레이 위치 조정
+- `Ctrl+Shift+M` 으로 이동 모드 전환 (황금 테두리 표시)
+- 원하는 위치로 드래그 후 다시 `Ctrl+Shift+M` 으로 고정
+
+---
+
+## 설정 항목
 
 | 항목 | 설명 |
 |---|---|
-| 위험 임계값 | 이 비율 이하로 떨어지면 빨간 바 + 점멸 |
-| 수호 최대치 | 내 캐릭터의 룬수호 최대값 입력 (0이면 OCR 자동 감지) |
-| 캡처 영역 X/Y/W/H | 게임 화면에서 룬수호 텍스트가 표시되는 영역 좌표 |
-| 캡처 영역 미리보기 | 버튼 클릭 시 설정된 캡처 영역을 3초간 빨간 테두리로 표시 |
-
-### 캡처 영역 찾기
-
-1. 설정창에서 대략적인 좌표 입력
-2. **캡처 영역 미리보기** 버튼으로 게임 화면에서 위치 확인
-3. 룬수호 숫자가 테두리 안에 들어오도록 조정 후 저장
-
-> 1920×1080 기준 기본값: X=20, Y=832, W=220, H=35
+| 위험 임계값 | 수호가 이 비율 이하로 떨어지면 빨간 바 + 점멸 |
+| 오버레이 크기 | 0.5× ~ 2.0× 배율 슬라이더 |
+| 색상 | 정상·위험·오버플로우 바 색상 (#RRGGBB 형식) |
+| 수호 최대치 | 0이면 OCR 자동 감지 |
+| 캡처 영역 | X/Y/W/H 직접 입력 또는 드래그로 위치 조정 |
+| DPI 배율 | 현재 환경의 DPI 배율 표시 (자동 처리) |
 
 ---
 
@@ -87,6 +101,5 @@ POE2RuneWardOverlay/bin/Debug/net8.0-windows/POE2RuneWardOverlay.exe
 
 ## 주의사항
 
-- `tessdata/eng.traineddata`는 용량 문제로 레포에 포함되지 않습니다. 위 링크에서 직접 다운로드하세요.
 - 게임이 **전체화면(보더리스)** 모드일 때 정상 작동합니다.
-- OCR 인식률은 캡처 영역 설정에 따라 달라집니다. 수호 숫자만 딱 맞게 잡는 것이 좋습니다.
+- OCR 인식률은 캡처 영역 설정에 따라 달라집니다. 룬수호 숫자만 딱 맞게 잡는 것이 좋습니다.

@@ -1,3 +1,4 @@
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
@@ -11,6 +12,7 @@ namespace POE2RuneWardOverlay;
 
 public partial class App : Application
 {
+    private Mutex? _mutex;
     private MainWindow? _overlay;
     private SettingsWindow? _settingsWindow;
     private AppSettings _settings = new();
@@ -22,20 +24,47 @@ public partial class App : Application
     private int _lastKnownMax = 0;
     private int _lastAccepted = -1;
     private int _pendingCurrent = -1;
+    private int _tickCount = 0;
+
+    private static readonly string LogPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "POE2RuneWardOverlay", "error.log");
+
+    private static void Log(string msg)
+    {
+        try { File.AppendAllText(LogPath, $"[{DateTime.Now:HH:mm:ss}] {msg}\n"); } catch { }
+    }
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        _mutex = new Mutex(true, "POE2RuneWardOverlay_SingleInstance", out bool createdNew);
+        if (!createdNew)
+        {
+            MessageBox.Show("이미 실행 중입니다.", "POE2 룬수호 오버레이",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            Shutdown();
+            return;
+        }
+
         base.OnStartup(e);
 
         _trayIcon = (TaskbarIcon)FindResource("TrayIcon");
 
+        bool isFirstRun = !File.Exists(AppSettings.DefaultPath);
         _settings = AppSettings.Load(AppSettings.DefaultPath);
-        _ocr = new OcrService("tessdata");
+        var tessPath = Path.Combine(
+            Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory,
+            "tessdata");
+        Log($"tessdata path: {tessPath}, exists: {Directory.Exists(tessPath)}");
+        _ocr = new OcrService(tessPath);
+        OcrService.Logger = msg => { if (_tickCount % 20 == 0) Log(msg); };
         _viewModel = new OverlayViewModel(_settings);
 
-        _overlay = new MainWindow();
+        _overlay = new MainWindow(_settings);
         PositionOverlay();
         _overlay.Show();
+        _overlay.ApplyScale(_settings.OverlayScale);
+        _overlay.ApplyLabelSettings();
 
         // Ctrl+Shift+M 전역 단축키 (게임 포커스 중에도 작동)
         var helper = new WindowInteropHelper(_overlay);
@@ -49,7 +78,7 @@ public partial class App : Application
         _timer.Tick += OnTick;
         _timer.Start();
 
-        _settingsWindow = new SettingsWindow(_settings, SaveSettings);
+        _settingsWindow = new SettingsWindow(_settings, SaveSettings, isFirstRun);
         _settingsWindow.Show();
     }
 
@@ -69,11 +98,15 @@ public partial class App : Application
 
     private void OnTick(object? sender, EventArgs e)
     {
+        _tickCount++;
         try
         {
+            var (sx, sy) = GetDpiScale();
             using var bitmap = _capture.Capture(
-                _settings.CaptureX, _settings.CaptureY,
-                _settings.CaptureWidth, _settings.CaptureHeight);
+                (int)Math.Round(_settings.CaptureX * sx),
+                (int)Math.Round(_settings.CaptureY * sy),
+                (int)Math.Round(_settings.CaptureWidth * sx),
+                (int)Math.Round(_settings.CaptureHeight * sy));
 
             var result = _ocr!.ReadWard(bitmap);
             if (result is null) return;
@@ -85,15 +118,15 @@ public partial class App : Application
             int effectiveMax = _lastKnownMax > 0 ? _lastKnownMax : max;
 
             // 5자리 이상(10000+)은 OCR 오인식
-            if (current >= 10000 || max >= 10000) return;
+            if (current >= 10000 || max >= 10000) { Log($"filter:5digit cur={current} max={max}"); return; }
 
             // 설정된 최대치가 있으면 ×1.5 초과는 오인식으로 무시
             if (_settings.MaxWardValue > 0 &&
-                current > (int)Math.Ceiling(_settings.MaxWardValue * 1.5)) return;
+                current > (int)Math.Ceiling(_settings.MaxWardValue * 1.5)) { Log($"filter:maxward cur={current} limit={Math.Ceiling(_settings.MaxWardValue * 1.5)}"); return; }
 
             // 자릿수가 2자리 이상 짧으면 partial read로 간주하고 무시
             if (effectiveMax > 0 &&
-                current.ToString().Length < effectiveMax.ToString().Length - 1) return;
+                current.ToString().Length < effectiveMax.ToString().Length - 1) { Log($"filter:digits cur={current} effMax={effectiveMax}"); return; }
 
             // 직전 값 대비 25% 초과 급변 → 다음 틱에서 재확인 후 반영
             if (_lastAccepted >= 0 &&
@@ -101,6 +134,7 @@ public partial class App : Application
             {
                 if (current != _pendingCurrent)
                 {
+                    Log($"filter:spike cur={current} last={_lastAccepted}");
                     _pendingCurrent = current;
                     return; // 이번 틱은 보류
                 }
@@ -112,7 +146,7 @@ public partial class App : Application
             _viewModel!.Update(current, effectiveMax);
             _overlay!.ApplyViewModel(_viewModel);
         }
-        catch { /* OCR 실패 시 마지막 표시값 유지 */ }
+        catch (Exception ex) { Log($"OnTick error: {ex}"); }
     }
 
     [DllImport("user32.dll")] static extern bool RegisterHotKey(IntPtr hWnd, int id, uint mods, uint vk);
@@ -123,6 +157,14 @@ public partial class App : Application
     private const uint MOD_SHIFT = 0x0004;
     private const uint VK_M = 0x4D;
     private IntPtr _overlayHandle;
+
+    private (double X, double Y) GetDpiScale()
+    {
+        var source = PresentationSource.FromVisual(_overlay!);
+        if (source?.CompositionTarget is { } target)
+            return (target.TransformToDevice.M11, target.TransformToDevice.M22);
+        return (1.0, 1.0);
+    }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
@@ -150,6 +192,8 @@ public partial class App : Application
         _settings.OverlayLeft = _overlay!.Left;
         _settings.OverlayTop = _overlay.Top;
         _settings.Save(AppSettings.DefaultPath);
+        _overlay.ApplyScale(_settings.OverlayScale);
+        _overlay.ApplyLabelSettings();
     }
 
     private void OnExitClick(object sender, RoutedEventArgs e)
@@ -165,6 +209,8 @@ public partial class App : Application
         SaveSettings();
         _ocr?.Dispose();
         _trayIcon?.Dispose();
+        _mutex?.ReleaseMutex();
+        _mutex?.Dispose();
         base.OnExit(e);
     }
 }

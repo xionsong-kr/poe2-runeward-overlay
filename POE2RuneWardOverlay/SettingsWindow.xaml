@@ -108,7 +108,7 @@
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="저장" Width="80" Margin="0,0,8,0" Click="OnSave"/>
-            <Button Content="취소" Width="80" Click="OnCancel"/>
+            <Button Content="닫기" Width="80" Click="OnCancel"/>
         </StackPanel>
     </StackPanel>
 </Window>

@@ -50,7 +50,7 @@ public partial class SettingsWindow : Window
         ThresholdLabel.Text = $"{_settings.WarningThresholdPercent}%";
         MaxWard.Text = _settings.MaxWardValue.ToString();
         ScaleSlider.Value = _settings.OverlayScale;
-        ScaleLabel.Text = $"{_settings.OverlayScale}×";
+        ScaleLabel.Text = $"{_settings.OverlayScale:F1}×";
         LabelTextInput.Text = _settings.OverlayLabelText;
         HideLabelCheck.IsChecked = !_settings.ShowLabel;
         LabelTextInput.IsEnabled = _settings.ShowLabel;
@@ -66,7 +66,7 @@ public partial class SettingsWindow : Window
     private void OnScaleChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (ScaleLabel is null) return;
-        ScaleLabel.Text = $"{ScaleSlider.Value}×";
+        ScaleLabel.Text = $"{ScaleSlider.Value:F1}×";
     }
 
     private void OnHideLabelChanged(object sender, RoutedEventArgs e)
@@ -111,7 +111,6 @@ public partial class SettingsWindow : Window
         if (int.TryParse(CaptureW.Text, out var w)) _settings.CaptureWidth = w;
         if (int.TryParse(CaptureH.Text, out var h)) _settings.CaptureHeight = h;
         _onSave();
-        Close();
     }
 
     private void OnAdjustArea(object sender, RoutedEventArgs e)
